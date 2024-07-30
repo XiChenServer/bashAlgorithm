@@ -14,11 +14,11 @@ type YoungCache struct {
 }
 
 // NewYoungCache 初始化OldCache
-func NewYoungCache(capacity int) *YoungCache {
+func NewYoungCache() *YoungCache {
 	return &YoungCache{
-		capacity: capacity,
-		List:     list.New(),
-		Items:    sync.Map{},
+
+		List:  list.New(),
+		Items: sync.Map{},
 	}
 }
 
@@ -51,15 +51,16 @@ func (c *YoungCache) Evict() {
 }
 
 // PromoteToOld 将青年区的项目晋升到老年区
-func (y *YoungCache) PromoteToOld(key interface{}, value interface{}, o *OldCache) {
+func (y *YoungCache) PromoteToOld(key interface{}, o *OldCache) {
 	y.mu.Lock()
 	defer y.mu.Unlock()
-
 	// 从青年区删除项目
-	if item, ok := y.Items.Load(key); ok {
+	item, ok := y.Items.Load(key)
+	if ok {
 		y.List.Remove(item.(*list.Element))
 		y.Items.Delete(key)
+
 	}
 	// 添加到老年区
-	o.Add(key, value)
+	o.Add(key, item, y)
 }

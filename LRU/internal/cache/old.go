@@ -15,11 +15,10 @@ type OldCache struct {
 }
 
 // NewOldCache 初始化OldCache
-func NewOldCache(capacity int) *OldCache {
+func NewOldCache() *OldCache {
 	return &OldCache{
-		capacity: capacity,
-		List:     list.New(),
-		Items:    sync.Map{},
+		List:  list.New(),
+		Items: sync.Map{},
 	}
 }
 
