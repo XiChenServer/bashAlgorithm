@@ -16,22 +16,29 @@ type YoungCache struct {
 // NewYoungCache 初始化OldCache
 func NewYoungCache() *YoungCache {
 	return &YoungCache{
-
-		List:  list.New(),
-		Items: sync.Map{},
+		capacity: 1024,
+		List:     list.New(),
+		Items:    sync.Map{},
 	}
 }
 
 // Add 向青年区缓存添加一个项
 func (c *YoungCache) Add(key interface{}, value interface{}) {
 	// 如果青年区已存在该项，则更新值并移动到列表前端
-	if _, ok := c.Items.Load(key); ok {
-		c.Items.Store(key, &ItemCache{Key: key, Value: value})
-		c.List.MoveToFront(c.List.Back()) // 假设是刚刚淘汰过来的，所以是列表最后一个
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// 检查项是否已存在
+	if element, ok := c.Items.Load(key); ok {
+		// 如果项存在，更新值并移动到列表前端
+		item := element.(*ItemCache) // 假设存储的是 *ItemCache 类型
+		item.Value = value.(string)  // 假设值是 string 类型，根据实际情况调整
+		c.List.MoveToFront(element.(*list.Element))
 	} else {
-		// 否则，添加新项
-		c.Items.Store(key, &ItemCache{Key: key, Value: value})
-		c.List.PushBack(&ItemCache{Key: key, Value: value})
+		// 如果项不存在，创建新项并添加到列表和 Map 中
+		newItem := &ItemCache{Key: key, Value: value}
+		c.Items.Store(key, newItem)
+		c.List.PushBack(newItem)
 	}
 
 	// 如果超出容量，淘汰最老的项

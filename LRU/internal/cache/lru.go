@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -76,81 +75,90 @@ func (l *LRUCache) loadFromDisk(key string) interface{} {
 
 	scanner := bufio.NewScanner(file)
 	var loadedValue string
+	lineNumber := 0 // 初始化行号计数器
+
 	for scanner.Scan() {
+		lineNumber++ // 每次循环迭代时递增行号
 		line := scanner.Text()
 		parts := strings.Split(line, " ")
-		if parts[0] == key { // extractKey 需要你根据文件格式定义一个解析键的函数
+
+		if len(parts) > 0 && parts[0] == key { // 确保分割后的数组有足够的元素
 			loadedValue = parts[1]
+			// 将真正访问的 key 对应的数据放入老年区（假设已经在 Access 中处理）
+			l.Old.Add(parts[0], parts[1], l.Young)
+
+			// 打印行号，如果需要
+			fmt.Printf("找到所需的数据在第 %d 行\n", lineNumber)
+
 			break // 找到所需的数据，不需要继续扫描
 		}
 	}
+
 	if loadedValue == "" {
 		return nil
 	}
 
-	// 将真正访问的 key 对应的数据放入老年区（假设已经在 Access 中处理）
 	// 根据空间局部性原则，加载邻近的键
-	nearbyKeys := l.nearbyKeys(key)
-	for _, nearbyKey := range nearbyKeys {
+	nearbyKeys, err := l.nearbyKeysAndValues(lineNumber)
+
+	if err != nil {
+
+		return loadedValue
+	}
+
+	for _, meta := range nearbyKeys {
 		// 这里需要调用 loadFromDisk 或其他方法来加载邻近键的数据
 		// 并将它们放入青年区
-		nearbyValue := l.loadFromDisk(nearbyKey)
-		if nearbyValue != nil {
-			l.Young.Add(nearbyKey, nearbyValue)
-		}
+		l.Young.Add(meta.Key, meta.Value)
+
 	}
 
 	return loadedValue
 }
 
-// nearbyKeys 确定并返回给定键的邻近键，基于文件中的数据格式
-func (l *LRUCache) nearbyKeys(baseKey string) []string {
-	// 将 baseKey 转换为整数
-	_, err := strconv.Atoi(baseKey)
+// nearbyKeysAndValues 获取指定行号附近的键值对，不包括目标行本身
+func (l *LRUCache) nearbyKeysAndValues(targetLineNum int) ([]ItemCache, error) {
+	filePath := "/home/zwm/go_projects/bash_algorithm/LRU/test/createFile.txt"
+
+	// 打开文件
+	file, err := os.Open(filePath)
 	if err != nil {
-		// 如果转换失败，返回空切片
-		return []string{}
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+	defer file.Close()
 
-	// 假设我们有一个函数获取所有键的列表
-	allKeys, err := l.allKeys()
-	if err != nil {
-		// 如果获取所有键失败，返回空切片
-		return []string{}
-	}
-
-	// 找到 baseKey 在 allKeys 中的索引
-	baseIndex := sort.Search(len(allKeys), func(i int) bool {
-		return allKeys[i] >= "12123"
-	}) - 1 // 使用 -1 因为 Search 找到的是第一个大于或等于 baseNum 的索引
-
-	// 定义一个函数来获取邻近键
-	getNearbyKeys := func(index int, count int, reverse bool) []string {
-		if index < 0 || index >= len(allKeys) {
-			return []string{}
+	scanner := bufio.NewScanner(file)
+	var items []ItemCache
+	lineNum := 0
+	fmt.Println(targetLineNum, targetLineNum-5, targetLineNum+5)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println(lineNum)
+		if lineNum >= targetLineNum-5 && lineNum <= targetLineNum+5 {
+			if lineNum == targetLineNum {
+				lineNum++
+				continue
+			}
+			parts := strings.SplitN(line, " ", 2)
+			items = append(items, ItemCache{Key: parts[0], Value: parts[1]})
 		}
-		start := index
-		end := index + count
-		if reverse {
-			start, end = end-1, start+1
+		if lineNum > targetLineNum+5 {
+			break
 		}
-		return allKeys[start:end]
+		lineNum++
 	}
 
-	// 获取前面五个和后面五个邻近键
-	nearbyBefore := getNearbyKeys(baseIndex, 5, true)
-	nearbyAfter := getNearbyKeys(baseIndex+1, 5, false)
-
-	// 合并前后邻近键，避免重复
-	nearbyKeys := append(nearbyBefore, nearbyAfter...)
-	// 去除 baseKey 本身
-	if contains(nearbyKeys, baseKey) {
-		nearbyKeys = removeElement(nearbyKeys, baseKey)
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
 	}
 
-	return nearbyKeys
+	// 检查是否成功找到数据
+	if len(items) == 0 {
+		return nil, errors.New("data not found")
+	}
+
+	return items, nil
 }
-
 func (l *LRUCache) allKeys() ([]string, error) {
 	return nil, nil
 }
