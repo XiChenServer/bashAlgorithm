@@ -2,6 +2,7 @@ package test
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"os"
 	"strconv"
@@ -41,4 +42,43 @@ func generateRandomLetters() (string, error) {
 		b[i] = letters[n.Int64()]
 	}
 	return string(b), nil
+}
+
+func Test_1(t *testing.T) {
+	mp := make(map[int]int)
+	for i := 0; i < 15; i++ {
+		mp[i] = i
+	}
+	for k, v := range mp {
+		fmt.Println(k, v)
+	}
+	fmt.Println("111111111111111111")
+	for k, v := range mp {
+		fmt.Println(k, v)
+	}
+	fmt.Println("111111111111111111")
+	for k, v := range mp {
+		fmt.Println(k, v)
+	}
+
+}
+
+func Test_Mid(t *testing.T) {
+	nums := []int{}
+	target := 0
+	l, r := 0, len(nums)-1
+	for r < l {
+		mid := (l + r) / 2
+		if target < nums[mid] {
+			r = mid - 1
+		}
+		if target > nums[mid] {
+			l = mid
+		}
+		if target == nums[mid] {
+			break
+		}
+
+	}
+
 }
