@@ -6,7 +6,9 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
+	"time"
 )
 
 func Test_CreateFile(t *testing.T) {
@@ -81,4 +83,107 @@ func Test_Mid(t *testing.T) {
 
 	}
 
+}
+
+var (
+	a     = 0
+	name  = "fjw"
+	name1 = []int{1, 2, 3}
+)
+
+func Print(i int) {
+	for true {
+		if a%3 == i {
+			time.Sleep(time.Second * 2)
+			fmt.Println(byte(name[a%3] - 'a'))
+			a++
+		}
+	}
+
+}
+
+func Test_dayin(t *testing.T) {
+
+	go Print(0)
+	go Print(1)
+	go Print(2)
+	fmt.Println(name)
+	for true {
+
+	}
+
+}
+
+func ChanPrint(ch <-chan int) {
+	for {
+		select {
+		case a := <-ch:
+			fmt.Println(a % 3)
+		default:
+
+		}
+	}
+
+}
+func Test_chan(t *testing.T) {
+	ch := make(chan int, 1)
+	a := 0
+	go ChanPrint(ch)
+	for {
+		time.Sleep(time.Second)
+		ch <- a
+		a++
+	}
+}
+
+var (
+	num int
+	mu  sync.Mutex
+	wg  sync.WaitGroup
+)
+
+func Print1(i int) {
+	defer wg.Done()
+	for {
+		mu.Lock()
+		if num%3 == i {
+			fmt.Println(i + 1)
+			num++
+			mu.Unlock()
+			time.Sleep(100 * time.Millisecond) // 加入短暂的休眠，以避免过多的 CPU 占用
+		} else {
+			mu.Unlock()
+			time.Sleep(10 * time.Millisecond) // 加入短暂的休眠，以避免忙等
+		}
+	}
+}
+
+func Test_Mutest(t *testing.T) {
+	wg.Add(3)
+	go Print1(0)
+	go Print1(1)
+	go Print1(2)
+	wg.Wait()
+}
+
+type mp struct {
+	m map[int]int
+	sync.RWMutex
+}
+
+func (m *mp) Get(key int) int {
+	m.RWMutex.RLock()
+	defer m.RWMutex.RUnlock()
+	return m.m[key]
+}
+func (m *mp) Set(key int, value int) {
+	m.RWMutex.Lock()
+	defer m.RWMutex.Unlock()
+	m.m[key] = value
+}
+
+func (m *mp) Del(key int) {
+	m.RWMutex.Lock()
+	defer m.RWMutex.Unlock()
+	delete(m.m, key)
 }
