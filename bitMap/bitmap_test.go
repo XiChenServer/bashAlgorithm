@@ -301,6 +301,7 @@ func Test_append(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		a = append(a, i)
 	}
+
 	for i := 0; i < len(a); i++ {
 		a = append(a, i)
 		fmt.Println(i)

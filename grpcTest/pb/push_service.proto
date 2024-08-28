@@ -1,0 +1,20 @@
+syntax = "proto3";
+package push;
+option go_package = "../pb";
+
+service PushService {
+  // 用于客户端订阅推送服务的 RPC
+  rpc Subscribe (SubscribeRequest) returns (stream PushMessage);
+}
+
+// 客户端订阅请求
+message SubscribeRequest {
+  string client_id = 1;
+}
+
+// 服务端主动推送的消息
+message PushMessage {
+  string message = 1;
+}
+
+// protoc --go_out=. --go-grpc_out=. push_service.proto
