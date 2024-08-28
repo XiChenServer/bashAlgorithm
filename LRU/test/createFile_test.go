@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"testing"
@@ -186,4 +187,19 @@ func (m *mp) Del(key int) {
 	m.RWMutex.Lock()
 	defer m.RWMutex.Unlock()
 	delete(m.m, key)
+}
+
+func suanfa(arr []int, x, y int) int {
+	sort.Ints(arr)
+	length := len(arr)
+	for i := range arr {
+		if i+1 >= x && i+1 <= y && length-i-1 >= x && length-i-1 <= y {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func Test_mei(t *testing.T) {
+
 }

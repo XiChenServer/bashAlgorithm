@@ -88,7 +88,6 @@ func (t *Trie) Erase(word string) bool {
 		}
 		move = move.nexts[ch-'a']
 	}
-
 	move.end = false
 	return true
 }

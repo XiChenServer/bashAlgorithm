@@ -16,7 +16,7 @@ func Test_LRU(t *testing.T) {
 		fmt.Println(e.Value)
 	}
 	// 使用Range方法遍历map并打印键值对
-	fmt.Println("old map")
+	fmt.Println("old Map")
 	l.Old.Items.Range(func(key, value interface{}) bool {
 		fmt.Printf("key: %v, value: %v\n", key, value)
 		return true
@@ -28,7 +28,7 @@ func Test_LRU(t *testing.T) {
 		fmt.Println(e.Value)
 	}
 	// 使用Range方法遍历map并打印键值对
-	fmt.Println("y map")
+	fmt.Println("y Map")
 	l.Young.Items.Range(func(key, value interface{}) bool {
 		fmt.Printf("key: %v, value: %v\n", key, value)
 		return true
